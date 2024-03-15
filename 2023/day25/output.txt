@@ -1,0 +1,17 @@
+hello
+{'bvb': {'hfx', 'xhk', 'ntq', 'rhn', 'cmg'},
+ 'cmg': {'rzs', 'lhk', 'bvb', 'nvd', 'qnr'},
+ 'frs': {'lhk', 'rsh', 'qnr', 'lsr'},
+ 'hfx': {'pzl', 'xhk', 'bvb', 'ntq', 'rhn'},
+ 'jqt': {'rhn', 'nvd', 'xhk', 'ntq'},
+ 'lhk': {'nvd', 'cmg', 'lsr', 'frs'},
+ 'lsr': {'pzl', 'frs', 'rzs', 'lhk', 'rsh'},
+ 'ntq': {'bvb', 'xhk', 'jqt', 'hfx'},
+ 'nvd': {'pzl', 'lhk', 'qnr', 'jqt', 'cmg'},
+ 'pzl': {'nvd', 'hfx', 'rsh', 'lsr'},
+ 'qnr': {'nvd', 'rzs', 'cmg', 'frs'},
+ 'rhn': {'bvb', 'xhk', 'jqt', 'hfx'},
+ 'rsh': {'pzl', 'rzs', 'lsr', 'frs'},
+ 'rzs': {'cmg', 'rsh', 'qnr', 'lsr'},
+ 'xhk': {'hfx', 'bvb', 'ntq', 'jqt', 'rhn'}}
+[9, 6]
