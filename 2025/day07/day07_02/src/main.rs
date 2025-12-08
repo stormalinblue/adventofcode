@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     io::{self},
 };
 
@@ -26,12 +26,12 @@ fn main() {
             break;
         }
 
-        let mut splitters = HashSet::new();
+        let mut splitters = Vec::new();
 
         for (i, char) in line.chars().enumerate() {
             match char {
                 '^' => {
-                    splitters.insert(i as i32);
+                    splitters.push(i as i32);
                 }
                 _ => {}
             }
