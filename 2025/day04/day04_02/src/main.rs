@@ -34,14 +34,7 @@ fn main() {
     let mut total_movable: i64 = 0;
 
     loop {
-        let mut count_matrix = matrix.clone();
         let mut next_matrix = matrix.clone();
-
-        for row in count_matrix.iter_mut() {
-            for item in row.iter_mut() {
-                *item = 0;
-            }
-        }
 
         let num_rows = matrix.len();
         let num_cols = matrix[0].len();
@@ -82,7 +75,7 @@ fn main() {
 
         // println!("matrix {:?}", matrix);
         // println!("counts {:?}", count_matrix);
-        println!("num movable {}", num_movable);
+        // println!("num movable {}", num_movable);
 
         if num_movable == 0 {
             break;
