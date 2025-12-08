@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::io;
 
 #[derive(Debug)]
@@ -114,10 +113,7 @@ fn main() {
             unionfind.union(edge.left, edge.right);
             num_new_edges += 1;
         }
-        // println!(
-        //     "Connect edge {:?} {:?} {}",
-        //     points[edge.left], points[edge.right], edge.dist
-        // );
+
         if num_new_edges == points.len() - 1 {
             let left_point = &points[edge.left];
             let right_point = &points[edge.right];
