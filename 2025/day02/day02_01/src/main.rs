@@ -74,7 +74,7 @@ fn range_to_events(ranges: &[Range]) -> Vec<Event> {
 fn invalid_in_range(range: &Range) -> i64 {
     const TEN: i64 = 10i64;
 
-    println!("Range {:?}", &range);
+    // println!("Range {:?}", &range);
 
     let mut power: u32 = 1;
     let mut invalid_tot: i64 = 0;
@@ -98,27 +98,28 @@ fn invalid_in_range(range: &Range) -> i64 {
             break;
         }
 
-        let num_invalid = cmp::min(range.right / divisor, max_quot) - (range.left / divisor)
-            + (if range.left % divisor == 0 { 1 } else { 0 });
+        let lb = cmp::max(min_mul, range.left);
+        let num_invalid = cmp::min(range.right / divisor, max_quot) - (lb / divisor)
+            + (if lb % divisor == 0 { 1 } else { 0 });
 
         if num_invalid == 0 {
             power += 1;
             continue;
         } else {
-            let first_invalid = if range.left % divisor == 0 {
-                range.left / divisor
+            let first_invalid = if lb % divisor == 0 {
+                lb / divisor
             } else {
-                range.left / divisor + 1
+                lb / divisor + 1
             };
 
             let last_invalid = first_invalid + num_invalid - 1;
 
-            println!("mul {} {}", min_mul, max_mul);
-            println!("First invalid {} {}", first_invalid, last_invalid);
+            // println!("mul {} {}", min_mul, max_mul);
+            // println!("First invalid {} {}", first_invalid, last_invalid);
 
             let invalid_sum =
                 ((first_invalid + last_invalid) * (last_invalid - first_invalid + 1)) / 2;
-            println!("Invalid sum {}", invalid_sum);
+            // println!("Invalid sum {}", invalid_sum);
             invalid_tot += invalid_sum * divisor;
         }
 
@@ -158,27 +159,22 @@ fn fix_ranges(ranges: &[Range]) -> Vec<Range> {
 fn main() {
     let mut ranges = parse_input();
     ranges.sort_by_key(|x| x.left);
-    let fixed_ranges = fix_ranges(ranges.as_slice());
-    println!("Before {} after {}", ranges.len(), fixed_ranges.len());
+    let fixed_ranges = &fix_ranges(ranges.as_slice());
+    // println!("Before {} after {}", ranges.len(), fixed_ranges.len());
 
-    for range in &ranges {
-        print!("({} {}) ", range.left, range.right);
-    }
-    println!();
-
-    for range in &fixed_ranges {
-        print!("({} {}) ", range.left, range.right);
-    }
-    println!();
-
-    println!("Before {:?}", ranges);
-    println!("After {:?}", fixed_ranges);
+    // println!("Before {:?}", ranges);
+    // println!("After {:?}", fixed_ranges);
     // println!("{:#?}", ranges);
 
-    for range in &fixed_ranges {
-        println!("Range {:?} sum {}", range, invalid_in_range(&range));
-        println!("");
-    }
+    // for range in fixed_ranges {
+    //     println!(
+    //         "pair {} {} {}",
+    //         range.left,
+    //         range.right,
+    //         invalid_in_range(&range)
+    //     );
+    //     // println!("");
+    // }
 
     println!(
         "Total invalid {}",
