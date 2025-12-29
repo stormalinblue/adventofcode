@@ -1,22 +1,11 @@
-use crate::lib::*;
+use day09_02::point::Point;
+use day09_02::*;
 
 use std::cmp;
+use std::fmt::Write as FmtWrite;
+use std::fs::File;
 use std::io;
-use std::ops::Sub;
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-struct Point {
-    col: i64,
-    row: i64,
-}
-
-impl<'b> Sub<&'b Point> for Point {
-    type Output = Point;
-
-    fn sub(self, rhs: &'b Self) -> Self::Output {
-        Point {col: self.col - rhs.col, row: self.row - rhs.row}
-    }
-}
+use std::io::{BufWriter, Write as IOWrite};
 
 fn parse_input() -> Vec<Point> {
     let mut points = Vec::<Point>::new();
@@ -36,8 +25,8 @@ fn parse_input() -> Vec<Point> {
             let (col_str, row_str) = trimmed_line.split_once(",").expect("Invalid point");
 
             points.push(Point {
-                row: row_str.parse().expect("Invalid row"),
-                col: col_str.parse().expect("Invalid col"),
+                x: col_str.parse().expect("Invalid row"),
+                y: row_str.parse().expect("Invalid col"),
             })
         }
     }
@@ -45,164 +34,214 @@ fn parse_input() -> Vec<Point> {
     points
 }
 
-fn in_strict_interior(bound1: &Point, bound2: &Point, test: &Point) -> bool {
+fn make_rect(bound1: &Point, bound2: &Point) -> Vec<Point> {
     let tr_point = Point {
-        row: cmp::min(bound1.row, bound2.row),
-        col: cmp::max(bound1.col, bound2.col),
+        x: cmp::min(bound1.x, bound2.x),
+        y: cmp::max(bound1.y, bound2.y),
     };
     let bl_point = Point {
-        row: cmp::max(bound1.row, bound2.row),
-        col: cmp::min(bound1.col, bound2.col),
-    };
-
-    return tr_point.row < test.row
-        && tr_point.col > test.col
-        && bl_point.row > test.row
-        && bl_point.col < test.col;
-}
-
-fn cross(a: &Point, b: &Point, c: &Point) -> i64 {
-    let diff_ab = Point {
-        row: a.row - b.row,
-        col: a.col - b.col,
-    };
-    let diff_bc = Point {
-        row: b.row - c.row,
-        col: b.col - c.col,
-    };
-
-    diff_ab.row * diff_bc.col - diff_ab.col * diff_bc.row
-}
-
-fn ccw(a: &Point, b: &Point, c: &Point) -> bool {
-    cross(a, b, c) > 0
-}
-
-fn area(a: &Point, b: &Point) -> i64 {
-    return ((a.row - b.row).abs() + 1) * ((a.col - b.col).abs() + 1);
-}
-
-#[cfg(test)]
-pub mod test {
-    use super::*;
-
-    #[test]
-    fn test_ccw() {
-        assert!(!ccw(
-            &Point { row: -1, col: 0 },
-            &Point { row: 0, col: 1 },
-            &Point { row: 1, col: 0 }
-        ));
-    }
-
-    #[test]
-    fn test_contain_simple() {
-        assert!(!point_inside(
-            &Point { row: -1, col: -1 },
-            &[
-                Point { row: 0, col: 0 },
-                Point { row: 1, col: 0 },
-                Point { row: 0, col: 1 },
-            ],
-        ))
-    }
-
-    #[test]
-    fn test_contain_concave() {
-        assert!(!point_inside(
-            &Point { row: -1, col: 1 },
-            &[
-                Point { row: 0, col: 0 },
-                Point { row: 5, col: 0 },
-                Point { row: 1, col: 1 },
-                Point { row: 0, col: 5 },
-            ],
-        ))
-    }
-}
-
-fn edges<'a, I>(shape: I) -> impl Iterator<Item = (&'a Point, &'a Point)>
-where
-    I: IntoIterator<Item = &'a Point>,
-{
-    shape
-        .iter()
-        .zip(shape.iter().cycle().skip(1))
-        .take(shape.len())
-}
-
-fn on_line_segment_inc(point: &Point, line: (&Point, &Point)) -> {
-    let left = line.0;
-    let right = line.1;
-
-
-}
-
-fn point_inside(point: &Point, shape: &[Point]) -> bool {
-    if shape.iter().any(|x| x == point) {
-        return true;
-    }
-
-    for (point1, point2) in edges(&shape) {
-
-    }
-
-    // assert!(num_switches % 2 == 0);
-    return num_switches % 2 != 0;
-}
-
-fn shape_inside(small: &[Point], big: &[Point]) -> bool {
-    small.iter().all(|point| {
-        let result = point_inside(point, big);
-        println!("{:?} inside {}", point, result);
-        result
-    })
-}
-
-fn make_square(bound1: &Point, bound2: &Point) -> Vec<Point> {
-    let tr_point = Point {
-        row: cmp::min(bound1.row, bound2.row),
-        col: cmp::max(bound1.col, bound2.col),
-    };
-    let bl_point = Point {
-        row: cmp::max(bound1.row, bound2.row),
-        col: cmp::min(bound1.col, bound2.col),
+        x: cmp::max(bound1.x, bound2.x),
+        y: cmp::min(bound1.y, bound2.y),
     };
     let tl_point = Point {
-        row: tr_point.row,
-        col: bl_point.col,
+        x: tr_point.x,
+        y: bl_point.y,
     };
     let br_point = Point {
-        row: bl_point.row,
-        col: tr_point.col,
+        x: bl_point.x,
+        y: tr_point.y,
     };
 
     return vec![tr_point, br_point, bl_point, tl_point];
 }
 
+fn winding_number(point: &Point, shape: &Vec<Point>) -> i32 {
+    const RIGHT: Point = Point { x: -1, y: 1 };
+    let ray = Ray {
+        points: TwoPoint {
+            first: *point,
+            second: point + &RIGHT,
+        },
+    };
+
+    let mut winds: i32 = 0;
+    for index in 0..shape.len() {
+        let next_index = (index + 1) % shape.len();
+
+        let segment = ClopenSegment {
+            points: TwoPoint {
+                first: shape[index],
+                second: shape[next_index],
+            },
+        };
+
+        if intersects(&ray, &segment) {
+            winds += 1;
+        }
+    }
+    winds
+}
+
+fn outside_shape_inc(point: &Point, shape: &Vec<Point>) -> bool {
+    for index in 0..shape.len() {
+        let next_index = (index + 1) % shape.len();
+
+        if is_between_incl(point, &shape[index], &shape[next_index]) {
+            println!("Point {:?} on boundary", point);
+            return true;
+        }
+    }
+
+    let winds = winding_number(point, shape);
+    println!("Winding number of {:?} is {}", point, winds);
+    winds % 2 == 0
+}
+
+fn inside_shape_inc(point: &Point, shape: &Vec<Point>) -> bool {
+    for index in 0..shape.len() {
+        let next_index = (index + 1) % shape.len();
+
+        if is_between_incl(point, &shape[index], &shape[next_index]) {
+            println!("Point {:?} on boundary", point);
+            return true;
+        }
+    }
+
+    let winds = winding_number(point, shape);
+    println!("Winding number of {:?} is {}", point, winds);
+    winds % 2 == 1
+}
+
+fn max_coord(point: &Point) -> i64 {
+    cmp::max(point.x, point.y)
+}
+
+fn max_shape_extent(shape: &Vec<Point>) -> i64 {
+    let mut max_extent = -1;
+    for point in shape.iter() {
+        max_extent = cmp::max(max_extent, max_coord(point));
+    }
+    max_extent
+}
+
+fn publish_shape(shape: &Vec<Point>, rect: &Vec<Point>) {
+    let file = File::create("drawing.svg").unwrap();
+    let mut writer = BufWriter::new(file);
+
+    let extent = {
+        let shp_max = max_shape_extent(shape);
+        let rect_max = max_shape_extent(rect);
+        cmp::max(shp_max, rect_max) as f64
+    };
+
+    writeln!(
+        writer,
+        "<svg width=\"500\" height=\"500\" xmlns=\"http://www.w3.org/2000/svg\">"
+    )
+    .unwrap();
+
+    let scale = |x: i64| (x as f64) * 500.0 / extent;
+
+    {
+        let mut points_str = String::new();
+        for point in shape.iter() {
+            write!(points_str, "{},{} ", scale(point.x), scale(point.y)).unwrap();
+        }
+
+        writeln!(
+            writer,
+            "<polygon fill=\"lightblue\" stroke=\"black\" points=\"{}\"/>",
+            points_str
+        )
+        .unwrap();
+    }
+
+    for point in shape.iter() {
+        writeln!(
+            writer,
+            "<circle fill=\"black\" stroke=\"none\" r=\"2\" cx=\"{}\" cy=\"{}\" />",
+            scale(point.x),
+            scale(point.y)
+        )
+        .unwrap();
+    }
+
+    {
+        let mut points_str = String::new();
+        for point in rect.iter() {
+            write!(points_str, "{},{} ", scale(point.x), scale(point.y)).unwrap();
+        }
+
+        writeln!(
+            writer,
+            "<polygon fill=\"rgba(250, 100, 100, 0.5)\" points=\"{}\"/>",
+            points_str
+        )
+        .unwrap();
+    }
+
+    writeln!(writer, "</svg>").unwrap();
+}
+
 fn main() {
     let mut max_area: i64 = -1;
     let points: Vec<Point> = parse_input();
+    let shape = simplify_shape(&points);
+    let mut best_point1 = Point { x: 0, y: 0 };
+    let mut best_point2 = Point { x: 0, y: 0 };
+
+    println!("Simplified shape: {:?}", shape);
 
     for first_point in &points {
         for second_point in &points {
-            if first_point != second_point {
-                println!("Try {:?} {:?}", first_point, second_point);
-                let square = make_square(first_point, second_point);
-                if shape_inside(square.as_slice(), points.as_slice()) {
-                    let ar = area(first_point, second_point);
+            if first_point == second_point {
+                continue;
+            }
+            let area = ((second_point.y - first_point.y).abs() + 1)
+                * ((second_point.x - first_point.x).abs() + 1);
 
-                    if ar > max_area {
-                        println!("Best area {:?} {:?} = {}", first_point, second_point, ar);
-                        max_area = ar;
-                    }
+            if area <= max_area {
+                continue;
+            }
+            println!(
+                "Try {:?} {:?} with area {}",
+                first_point, second_point, area
+            );
+            let rect = make_rect(first_point, second_point);
+            // println!("Rect is {:?}", rect);
+
+            let mut in_shape = true;
+
+            for point in shape.iter() {
+                if !outside_shape_inc(point, &rect) {
+                    in_shape = false;
+                    break;
                 }
+            }
+
+            for point in rect.iter() {
+                if !inside_shape_inc(point, &shape) {
+                    in_shape = false;
+                    break;
+                }
+            }
+
+            if in_shape {
+                println!("In shape, updating");
+                max_area = area;
+                best_point1 = *first_point;
+                best_point2 = *second_point;
             }
         }
     }
 
     println!("Max area {}", max_area);
+    println!("Points {:?} {:?}", best_point1, best_point2);
+
+    publish_shape(&shape, &make_rect(&best_point1, &best_point2));
 }
 
 // Too low: 159180048
 // Too high: 3449890980
+//
+// Too high: 4749929916
