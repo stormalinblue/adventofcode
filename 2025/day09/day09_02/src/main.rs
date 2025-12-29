@@ -87,13 +87,13 @@ fn outside_shape_inc(point: &Point, shape: &Vec<Point>) -> bool {
         let next_index = (index + 1) % shape.len();
 
         if is_between_incl(point, &shape[index], &shape[next_index]) {
-            println!("Point {:?} on boundary", point);
+            // println!("Point {:?} on boundary", point);
             return true;
         }
     }
 
     let winds = winding_number(point, shape);
-    println!("Winding number of {:?} is {}", point, winds);
+    // println!("Winding number of {:?} is {}", point, winds);
     winds % 2 == 0
 }
 
@@ -102,13 +102,13 @@ fn inside_shape_inc(point: &Point, shape: &Vec<Point>) -> bool {
         let next_index = (index + 1) % shape.len();
 
         if is_between_incl(point, &shape[index], &shape[next_index]) {
-            println!("Point {:?} on boundary", point);
+            // println!("Point {:?} on boundary", point);
             return true;
         }
     }
 
     let winds = winding_number(point, shape);
-    println!("Winding number of {:?} is {}", point, winds);
+    // println!("Winding number of {:?} is {}", point, winds);
     winds % 2 == 1
 }
 
@@ -219,10 +219,47 @@ fn main() {
                 }
             }
 
-            for point in rect.iter() {
-                if !inside_shape_inc(point, &shape) {
-                    in_shape = false;
-                    break;
+            if in_shape {
+                for point in rect.iter() {
+                    if !inside_shape_inc(point, &shape) {
+                        in_shape = false;
+                        break;
+                    }
+                }
+            }
+
+            if in_shape {
+                for (shp_index, shp_point) in shape.iter().enumerate() {
+                    let next_shp_index = (shp_index + 1) % shape.len();
+                    let next_shp_point = &shape[next_shp_index];
+
+                    let shp_edge = OpenSegment {
+                        points: TwoPoint {
+                            first: *shp_point,
+                            second: *next_shp_point,
+                        },
+                    };
+
+                    for (rect_index, rect_point) in rect.iter().enumerate() {
+                        let next_rect_index = (rect_index + 1) % rect.len();
+                        let next_rect_point = &rect[next_rect_index];
+
+                        let rect_edge = OpenSegment {
+                            points: TwoPoint {
+                                first: *rect_point,
+                                second: *next_rect_point,
+                            },
+                        };
+
+                        if crosses(&rect_edge, &shp_edge) {
+                            println!(
+                                "Rect edge {:?} crosses {:?}",
+                                rect_edge.points, shp_edge.points
+                            );
+                            in_shape = false;
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -242,6 +279,7 @@ fn main() {
 }
 
 // Too low: 159180048
+// Wrong: 1560863364
 // Too high: 3449890980
 //
 // Too high: 4749929916

@@ -18,6 +18,10 @@ pub struct ClopenSegment {
     pub points: TwoPoint,
 }
 
+pub struct OpenSegment {
+    pub points: TwoPoint,
+}
+
 pub struct Ray {
     pub points: TwoPoint,
 }
@@ -133,6 +137,24 @@ pub fn intersects(ray: &Ray, segment: &ClopenSegment) -> bool {
         0 <= segment_time.numerator
             && segment_time.numerator < segment_time.denominator
             && 0 <= ray_time.numerator
+    }
+}
+
+pub fn crosses(segment1: &OpenSegment, segment2: &OpenSegment) -> bool {
+    let times = intersection_time(&segment1.points, &segment2.points).normalize();
+    // println!("Times {:?}", times);
+    if times.denom == 0 {
+        false
+    } else {
+        let segment1_time = times.x_ratio();
+        let segment2_time = times.y_ratio();
+        // we must have 0 < segment1_time < 1
+        // we must have 0 < segment2_time < 1
+
+        0 < segment1_time.numerator
+            && segment1_time.numerator < segment1_time.denominator
+            && 0 < segment2_time.numerator
+            && segment2_time.numerator < segment2_time.denominator
     }
 }
 
