@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 use std::io::{self, BufRead};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Operand {
     Variable(String),
     Constant(u16),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct BitAnd {
     left: Operand,
     right: Operand,
@@ -19,7 +19,7 @@ impl BitAnd {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct BitOr {
     left: Operand,
     right: Operand,
@@ -31,7 +31,7 @@ impl BitOr {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Not {
     op: Operand,
 }
@@ -42,7 +42,7 @@ impl Not {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct LShift {
     op: Operand,
     shift: u64,
@@ -54,7 +54,7 @@ impl LShift {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct RShift {
     op: Operand,
     shift: u64,
@@ -66,12 +66,12 @@ impl RShift {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Direct {
     op: Operand,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Expression {
     BitAnd(BitAnd),
     BitOr(BitOr),
@@ -190,8 +190,25 @@ fn evaluate(
 
 fn part1(defns: &HashMap<String, Expression>) -> u16 {
     let mut cache = HashMap::<String, u16>::new();
-
     evaluate("a", defns, &mut cache)
+}
+
+fn part2(orig_defns: &HashMap<String, Expression>) -> u16 {
+    let orig_a_val = part1(orig_defns);
+
+    let defns = {
+        let mut defns = orig_defns.clone();
+        defns.insert(
+            "b".to_string(),
+            Expression::Direct(Direct {
+                op: Operand::Constant(orig_a_val),
+            }),
+        );
+        defns
+    };
+
+    let mut cache = HashMap::<String, u16>::new();
+    evaluate("a", &defns, &mut cache)
 }
 
 fn main() {
@@ -199,4 +216,5 @@ fn main() {
     let input = parse_input();
 
     println!("Part 1: {}", part1(&input));
+    println!("Part 2: {}", part2(&input));
 }
