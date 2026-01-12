@@ -78,3 +78,62 @@ impl MD5State {
         }
     }
 }
+
+#[repr(align(4))]
+struct AlignedBytes {
+    bytes: [u8; 64],
+}
+
+const _: () = assert!(align_of::<AlignedBytes>() == align_of::<u32>());
+
+struct MD5Hasher {
+    state: MD5State,
+    last_bytes: AlignedBytes,
+    offset: usize,
+    len_bytes: usize,
+}
+
+fn is_aligned(bytes: &[u8]) -> bool {
+    (bytes.as_ptr() as usize) % align_of::<u32>() == 0
+}
+
+#[cfg(target_endian = "little")]
+impl MD5Hasher {
+    fn update(&mut self, bytes: &[u8]) -> () {
+        let mut input_offset: usize = 0;
+
+        let prev_offset = self.len_bytes % 64;
+
+        if self.len_bytes % 64 + bytes.len() >= 64 {}
+
+        if is_aligned(&bytes[input_offset..]) {
+            while input_offset + 64 <= bytes.len() {
+                self.state = unsafe {
+                    let (_, block, _) = &bytes[input_offset..(input_offset + 64)].align_to::<u32>();
+                    let new_state = self.state.consume_block((*block).try_into().unwrap());
+                    new_state
+                };
+
+                input_offset += 64;
+            }
+        } else {
+            while input_offset + 64 <= bytes.len() {
+                self.last_bytes
+                    .bytes
+                    .copy_from_slice(&bytes[input_offset..(input_offset + 64)]);
+
+                self.state = unsafe {
+                    let (_, block, _) = &self.last_bytes.bytes.align_to::<u32>();
+                    let new_state = self.state.consume_block((*block).try_into().unwrap());
+                    new_state
+                };
+            }
+        }
+
+        self.len_bytes += bytes.len();
+    }
+
+    fn digest(&self) -> [u8; 16] {
+        transmute
+    }
+}
