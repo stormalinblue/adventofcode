@@ -1,5 +1,10 @@
 use std::io::{self, Read};
 
+use day01::{
+    point::Point,
+    two_point::{ClopenSegment, Crosses, TwoPoint},
+};
+
 type Vector = [i64; 2];
 
 fn turn_left(input: &Vector) -> Vector {
@@ -68,9 +73,17 @@ fn parse_input() -> Vec<Instruction> {
         .collect()
 }
 
-fn part1(instructions: &Vec<Instruction>) -> i64 {
+#[derive(Debug)]
+struct Update {
+    src: Vector,
+    dst: Vector,
+}
+
+fn updates(instructions: &Vec<Instruction>) -> Vec<Update> {
     let mut position = [0, 0];
     let mut direction = [0, 1];
+
+    let mut updates = Vec::new();
 
     for instr in instructions.iter() {
         direction = match instr.direction {
@@ -78,14 +91,81 @@ fn part1(instructions: &Vec<Instruction>) -> i64 {
             TurnDirection::Right => turn_right(&direction),
         };
 
-        position = move_cursor(&position, &direction, instr.distance);
+        let new_position = move_cursor(&position, &direction, instr.distance);
+        updates.push(Update {
+            src: position,
+            dst: new_position,
+        });
+        position = new_position;
     }
 
-    l1_norm(&position)
+    updates
+}
+
+fn part1(update_list: &Vec<Update>) -> i64 {
+    l1_norm(&update_list.last().expect("Should have at least one").dst)
+}
+
+fn part2(raw_update_list: &Vec<Update>) -> i64 {
+    fn from_update(update: &Update) -> ClopenSegment {
+        ClopenSegment {
+            points: TwoPoint {
+                first: Point {
+                    x: update.src[0],
+                    y: update.src[1],
+                },
+                second: Point {
+                    x: update.dst[0],
+                    y: update.dst[1],
+                },
+            },
+        }
+    }
+
+    let update_list: Vec<_> = raw_update_list.iter().map(from_update).collect();
+
+    for (latest_index, latest) in update_list.iter().enumerate().skip(1) {
+        let mut earliest_intersection = None;
+        for (_, prev) in update_list.iter().enumerate().take(latest_index) {
+            if (latest, prev).crosses() {
+                let intersection_point: Point = if latest.points.first.x == latest.points.second.x {
+                    Point {
+                        x: latest.points.first.x,
+                        y: prev.points.first.y,
+                    }
+                } else {
+                    Point {
+                        x: prev.points.first.x,
+                        y: latest.points.first.y,
+                    }
+                };
+
+                let intersection_disp = &intersection_point - &latest.points.first;
+                let intersection_time = intersection_disp.x.abs() + intersection_disp.y.abs();
+                earliest_intersection = if let Some(prev) = earliest_intersection {
+                    let (earliest_time, _) = prev;
+                    if intersection_time < earliest_time {
+                        Some((intersection_time, intersection_point))
+                    } else {
+                        Some(prev)
+                    }
+                } else {
+                    Some((intersection_time, intersection_point))
+                }
+            }
+            if let Some((_, intersection_point)) = earliest_intersection {
+                return intersection_point.x.abs() + intersection_point.y.abs();
+            }
+        }
+    }
+    return 0;
 }
 
 fn main() {
     let input = parse_input();
 
-    println!("{}", part1(&input));
+    let update_list = updates(&input);
+
+    println!("{}", part1(&update_list));
+    println!("{}", part2(&update_list));
 }
